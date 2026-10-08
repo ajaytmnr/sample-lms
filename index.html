@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Simple LMS</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f6f8;
+            color: #222;
+        }
+
+
+        /* =========================================
+           HEADER
+        ========================================= */
+
+        .header {
+            height: 60px;
+
+            background: #111827;
+
+            color: white;
+
+            display: flex;
+            align-items: center;
+
+            padding: 0 25px;
+
+            font-size: 20px;
+
+            font-weight: bold;
+        }
+
+
+        /* =========================================
+           MAIN LMS
+        ========================================= */
+
+        .lms-container {
+            display: flex;
+
+            height: calc(100vh - 60px);
+        }
+
+
+        /* =========================================
+           SIDEBAR
+        ========================================= */
+
+        .sidebar {
+            width: 300px;
+
+            background: white;
+
+            border-right: 1px solid #ddd;
+
+            overflow-y: auto;
+
+            flex-shrink: 0;
+        }
+
+
+        .course-title {
+            padding: 20px;
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            border-bottom: 1px solid #eee;
+        }
+
+
+        .lesson {
+            padding: 16px 20px;
+
+            border-bottom: 1px solid #eee;
+
+            cursor: pointer;
+
+            transition: background 0.2s;
+        }
+
+
+        .lesson:hover {
+            background: #f3f4f6;
+        }
+
+
+        .lesson.active {
+            background: #e8f0ff;
+
+            border-left: 4px solid #2563eb;
+
+            padding-left: 16px;
+        }
+
+
+        .lesson-title {
+            font-size: 15px;
+
+            font-weight: 500;
+
+            line-height: 1.4;
+        }
+
+
+        .lesson-duration {
+            font-size: 12px;
+
+            color: #777;
+
+            margin-top: 5px;
+        }
+
+
+        /* =========================================
+           RIGHT CONTENT
+        ========================================= */
+
+        .content {
+            flex: 1;
+
+            padding: 30px;
+
+            overflow-y: auto;
+
+            min-width: 0;
+        }
+
+
+        .video-title {
+            font-size: 24px;
+
+            font-weight: bold;
+
+            margin-bottom: 20px;
+
+            max-width: 1000px;
+        }
+
+
+        /* =========================================
+           VIDEO WRAPPER
+        ========================================= */
+
+        .video-wrapper {
+            position: relative;
+
+            width: 100%;
+
+            max-width: 1000px;
+
+            aspect-ratio: 16 / 9;
+
+            background: #000;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+        }
+
+
+        /* =========================================
+           YOUTUBE IFRAME
+        ========================================= */
+
+        .video-wrapper iframe {
+            position: absolute;
+
+            inset: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            border: none;
+
+            display: block;
+        }
+
+
+        /* =========================================
+           COMMON YOUTUBE BLOCKING LAYER
+        ========================================= */
+
+        .youtube-block {
+
+            position: absolute;
+
+            z-index: 100;
+
+            background: transparent;
+
+            /*
+                IMPORTANT:
+
+                "disabled" is NOT a valid value
+                for pointer-events.
+
+                "auto" makes this transparent
+                element receive the click instead
+                of the YouTube iframe.
+            */
+
+            pointer-events: auto;
+        }
+
+
+        /* =========================================
+           TOP INFORMATION BLOCK #1
+
+           Blocks YouTube title/channel area
+        ========================================= */
+
+        .youtube-top-info-block {
+
+            top: 0;
+
+            left: 0;
+
+            width: 64%;
+
+            height: 13%;
+        }
+
+
+        /* =========================================
+           TOP INFORMATION BLOCK #2
+
+           Blocks another top-right area.
+
+           This is the block you requested.
+        ========================================= */
+
+        .youtube-top-info-block2 {
+
+            position: absolute;
+
+            z-index: 100;
+
+            top: 0;
+
+            right: 13%;
+
+            width: 20%;
+
+            height: 13%;
+
+            background: transparent;
+
+            pointer-events: auto;
+        }
+
+
+        /* =========================================
+           WATCH ON YOUTUBE
+        ========================================= */
+
+        .youtube-watch-block {
+
+            right: 0;
+
+            bottom: 0;
+
+            width: 23%;
+
+            height: 15%;
+        }
+
+
+        /* =========================================
+           MORE VIDEOS
+        ========================================= */
+
+        .youtube-more-videos-block {
+
+            right: 23%;
+
+            bottom: 0;
+
+            width: 20%;
+
+            height: 15%;
+        }
+
+
+        /* =========================================
+           CHANNEL / BOTTOM LEFT
+        ========================================= */
+
+        .youtube-channel-block {
+
+            left: 0;
+
+            bottom: 0;
+
+            width: 15%;
+
+            height: 15%;
+        }
+
+
+        /* =========================================
+           CUSTOM FULLSCREEN BUTTON
+        ========================================= */
+
+        .custom-fullscreen {
+
+            position: absolute;
+
+            right: 15px;
+
+            bottom: 15px;
+
+            z-index: 200;
+
+            width: 45px;
+
+            height: 40px;
+
+            border: none;
+
+            border-radius: 6px;
+
+            background: rgba(0, 0, 0, 0.65);
+
+            color: white;
+
+            font-size: 24px;
+
+            cursor: pointer;
+        }
+
+
+        .custom-fullscreen:hover {
+
+            background: rgba(0, 0, 0, 0.85);
+        }
+
+
+        /* =========================================
+           LMS FULLSCREEN
+        ========================================= */
+
+        .video-wrapper:fullscreen {
+
+            width: 100vw;
+
+            height: 100vh;
+
+            max-width: none;
+
+            border-radius: 0;
+
+            aspect-ratio: auto;
+        }
+
+
+        .video-wrapper:-webkit-full-screen {
+
+            width: 100vw;
+
+            height: 100vh;
+
+            max-width: none;
+
+            border-radius: 0;
+        }
+
+
+        /* =========================================
+           DESCRIPTION
+        ========================================= */
+
+        .description {
+
+            max-width: 1000px;
+
+            margin-top: 20px;
+
+            background: white;
+
+            padding: 20px;
+
+            border-radius: 10px;
+        }
+
+
+        .description h3 {
+
+            margin-bottom: 10px;
+        }
+
+
+        .description p {
+
+            color: #666;
+
+            line-height: 1.6;
+        }
+
+
+        /* =========================================
+           TABLET
+        ========================================= */
+
+        @media (max-width: 1024px) {
+
+            .sidebar {
+
+                width: 260px;
+            }
+
+
+            .content {
+
+                padding: 20px;
+            }
+
+
+            .video-title {
+
+                font-size: 22px;
+            }
+
+
+            /*
+                Slightly adjust blocking areas
+                for smaller screens.
+            */
+
+            .youtube-top-info-block {
+
+                width: 63%;
+
+                height: 14%;
+            }
+
+
+            .youtube-top-info-block2 {
+
+                right: 13%;
+
+                width: 20%;
+
+                height: 14%;
+            }
+
+
+            .youtube-watch-block {
+
+                width: 25%;
+
+                height: 16%;
+            }
+
+
+            .youtube-more-videos-block {
+
+                right: 25%;
+
+                width: 20%;
+
+                height: 16%;
+            }
+
+
+            .youtube-channel-block {
+
+                width: 16%;
+
+                height: 16%;
+            }
+        }
+
+
+        /* =========================================
+           MOBILE
+        ========================================= */
+
+        @media (max-width: 768px) {
+
+            .header {
+
+                height: 55px;
+
+                padding: 0 15px;
+
+                font-size: 18px;
+            }
+
+
+            .lms-container {
+
+                flex-direction: column;
+
+                height: auto;
+            }
+
+
+            .sidebar {
+
+                width: 100%;
+
+                height: auto;
+
+                max-height: 280px;
+
+                border-right: none;
+
+                border-bottom: 1px solid #ddd;
+            }
+
+
+            .course-title {
+
+                padding: 15px;
+
+                font-size: 17px;
+            }
+
+
+            .lesson {
+
+                padding: 14px 15px;
+            }
+
+
+            .lesson.active {
+
+                padding-left: 11px;
+            }
+
+
+            .content {
+
+                padding: 15px;
+
+                overflow-y: visible;
+            }
+
+
+            .video-title {
+
+                font-size: 19px;
+
+                line-height: 1.35;
+
+                margin-bottom: 15px;
+            }
+
+
+            /* =====================================
+               MOBILE BLOCK #1
+            ===================================== */
+
+            .youtube-top-info-block {
+
+                top: 0;
+
+                left: 0;
+
+                width: 63%;
+
+                height: 15%;
+            }
+
+
+            /* =====================================
+               MOBILE BLOCK #2
+            ===================================== */
+
+            .youtube-top-info-block2 {
+
+                top: 0;
+
+                right: 12%;
+
+                width: 23%;
+
+                height: 15%;
+
+                pointer-events: auto;
+            }
+
+
+            /* =====================================
+               MOBILE WATCH BLOCK
+            ===================================== */
+
+            .youtube-watch-block {
+
+                right: 0;
+
+                bottom: 0;
+
+                width: 27%;
+
+                height: 18%;
+            }
+
+
+            /* =====================================
+               MOBILE MORE VIDEOS
+            ===================================== */
+
+            .youtube-more-videos-block {
+
+                right: 27%;
+
+                bottom: 0;
+
+                width: 23%;
+
+                height: 18%;
+            }
+
+
+            /* =====================================
+               MOBILE CHANNEL BLOCK
+            ===================================== */
+
+            .youtube-channel-block {
+
+                left: 0;
+
+                bottom: 0;
+
+                width: 17%;
+
+                height: 18%;
+            }
+
+
+            /* =====================================
+               MOBILE FULLSCREEN BUTTON
+            ===================================== */
+
+            .custom-fullscreen {
+
+                right: 10px;
+
+                bottom: 10px;
+
+                width: 42px;
+
+                height: 38px;
+
+                font-size: 21px;
+            }
+
+
+            .description {
+
+                margin-top: 15px;
+
+                padding: 15px;
+            }
+        }
+
+
+        /* =========================================
+           SMALL MOBILE
+        ========================================= */
+
+        @media (max-width: 480px) {
+
+            .content {
+
+                padding: 10px;
+            }
+
+
+            .video-title {
+
+                font-size: 17px;
+            }
+
+
+            /*
+                Smaller mobile screen:
+                make blocking areas a little larger
+            */
+
+            .youtube-top-info-block {
+
+                width: 62%;
+
+                height: 17%;
+            }
+
+
+            .youtube-top-info-block2 {
+
+                right: 10%;
+
+                width: 26%;
+
+                height: 17%;
+            }
+
+
+            .youtube-watch-block {
+
+                width: 30%;
+
+                height: 20%;
+            }
+
+
+            .youtube-more-videos-block {
+
+                right: 30%;
+
+                width: 25%;
+
+                height: 20%;
+            }
+
+
+            .youtube-channel-block {
+
+                width: 20%;
+
+                height: 20%;
+            }
+        }
+
+
+        /* =========================================
+           FULLSCREEN OVERRIDES
+
+           These continue working after your
+           custom fullscreen button is clicked.
+        ========================================= */
+
+        .video-wrapper:fullscreen .youtube-block,
+        .video-wrapper:fullscreen .youtube-top-info-block2 {
+
+            position: absolute;
+
+            pointer-events: auto;
+        }
+
+
+        .video-wrapper:fullscreen .youtube-top-info-block {
+
+            width: 64%;
+
+            height: 13%;
+        }
+
+
+        .video-wrapper:fullscreen .youtube-top-info-block2 {
+
+            top: 0;
+
+            right: 13%;
+
+            width: 20%;
+
+            height: 13%;
+        }
+
+
+        .video-wrapper:fullscreen .youtube-watch-block {
+
+            right: 0;
+
+            bottom: 0;
+
+            width: 23%;
+
+            height: 15%;
+        }
+
+
+        .video-wrapper:fullscreen .youtube-more-videos-block {
+
+            right: 23%;
+
+            bottom: 0;
+
+            width: 20%;
+
+            height: 15%;
+        }
+
+
+        .video-wrapper:fullscreen .youtube-channel-block {
+
+            left: 0;
+
+            bottom: 0;
+
+            width: 15%;
+
+            height: 15%;
+        }
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================================
+         HEADER
+    ========================================= -->
+
+    <header class="header">
+
+        Simple LMS
+
+    </header>
+
+
+
+    <!-- =========================================
+         LMS CONTAINER
+    ========================================= -->
+
+    <div class="lms-container">
+
+
+        <!-- =====================================
+             SIDEBAR
+        ====================================== -->
+
+        <aside class="sidebar">
+
+
+            <div class="course-title">
+
+                NCOD
+
+            </div>
+
+
+            <!-- VIDEO 1 -->
+
+            <div
+                class="lesson active"
+
+                data-video="_01qa9OYsDw"
+
+                data-title="28 Feb 2023 # 2PBTB, RBS, TBS, Range Markeing Detail, Demand Zone."
+            >
+
+                <div class="lesson-title">
+
+                    28 Feb 2023 # 2PBTB, RBS, TBS...
+
+                </div>
+
+
+                <div class="lesson-duration">
+
+                    Video
+
+                </div>
+
+            </div>
+
+
+        
+
+
+        </aside>
+
+
+
+        <!-- =====================================
+             RIGHT CONTENT
+        ====================================== -->
+
+        <main class="content">
+
+
+            <h1
+                class="video-title"
+                id="videoTitle"
+            >
+
+                28 Feb 2023 # 2PBTB, RBS, TBS,
+                Range Markeing Detail, Demand Zone.
+
+            </h1>
+
+
+
+            <!-- =================================
+                 VIDEO
+            ================================== -->
+
+            <div
+                class="video-wrapper"
+                id="videoWrapper"
+            >
+
+
+                <!-- YOUTUBE -->
+
+                <iframe
+                    id="youtubePlayer"
+
+                    src="https://www.youtube.com/embed/_01qa9OYsDw?rel=0&modestbranding=1&fs=0"
+
+                    title="Course Video"
+
+                    allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+
+                    referrerpolicy="strict-origin-when-cross-origin">
+                </iframe>
+
+
+
+                <!-- =================================
+                     BLOCKING AREAS
+                ================================== -->
+
+
+                <!-- Top-left -->
+
+                <div
+                    class="youtube-block youtube-top-info-block">
+                </div>
+
+
+                <!-- Top-right -->
+
+                <div
+                    class="youtube-block youtube-top-info-block2">
+                </div>
+
+
+                <!-- Bottom-right -->
+
+                <div
+                    class="youtube-block youtube-watch-block">
+                </div>
+
+
+                <!-- Bottom-middle/right -->
+
+                <div
+                    class="youtube-block youtube-more-videos-block">
+                </div>
+
+
+                <!-- Bottom-left -->
+
+                <div
+                    class="youtube-block youtube-channel-block">
+                </div>
+
+
+
+                <!-- =================================
+                     CUSTOM FULLSCREEN
+                ================================== -->
+
+                <button
+                    type="button"
+
+                    id="fullscreenButton"
+
+                    class="custom-fullscreen"
+                >
+
+                    ⛶
+
+                </button>
+
+
+            </div>
+
+
+
+            <!-- =================================
+                 DESCRIPTION
+            ================================== -->
+
+            <div class="description">
+
+
+                <h3>
+
+                    About this lesson
+
+                </h3>
+
+
+                <p id="descriptionText">
+
+                    No description available for this lesson.
+
+                </p>
+
+
+            </div>
+
+
+        </main>
+
+
+    </div>
+
+
+
+    <!-- =========================================
+         JAVASCRIPT
+    ========================================= -->
+
+    <script>
+
+
+        /* =====================================
+           ELEMENTS
+        ===================================== */
+
+        const lessons =
+            document.querySelectorAll(".lesson");
+
+
+        const youtubePlayer =
+            document.getElementById("youtubePlayer");
+
+
+        const videoTitle =
+            document.getElementById("videoTitle");
+
+
+        const descriptionText =
+            document.getElementById("descriptionText");
+
+
+        const videoWrapper =
+            document.getElementById("videoWrapper");
+
+
+        const fullscreenButton =
+            document.getElementById("fullscreenButton");
+
+
+
+        /* =====================================
+           YOUTUBE URL FUNCTION
+
+           Always keeps fs=0.
+        ===================================== */
+
+        function getYoutubeUrl(videoId) {
+
+            return (
+                "https://www.youtube.com/embed/"
+                + videoId
+                + "?rel=0&modestbranding=1&fs=0"
+            );
+
+        }
+
+
+
+        /* =====================================
+           LESSON CLICK
+        ===================================== */
+
+        lessons.forEach(function (lesson) {
+
+
+            lesson.addEventListener("click", function () {
+
+
+                /* Remove active */
+
+                lessons.forEach(function (item) {
+
+                    item.classList.remove("active");
+
+                });
+
+
+                /* Add active */
+
+                lesson.classList.add("active");
+
+
+                /* Get video ID */
+
+                const videoId =
+                    lesson.getAttribute("data-video");
+
+
+                /* Get title */
+
+                const title =
+                    lesson.getAttribute("data-title");
+
+
+                /* Change video */
+
+                youtubePlayer.src =
+                    getYoutubeUrl(videoId);
+
+
+                /* Change title */
+
+                videoTitle.textContent =
+                    title;
+
+
+                /* Change description */
+
+                descriptionText.textContent =
+                    "You are currently watching: "
+                    + title;
+
+            });
+
+        });
+
+
+
+        /* =====================================
+           CUSTOM FULLSCREEN
+        ===================================== */
+
+        fullscreenButton.addEventListener(
+            "click",
+            async function () {
+
+                try {
+
+
+                    /* Enter fullscreen */
+
+                    if (!document.fullscreenElement) {
+
+
+                        await videoWrapper.requestFullscreen();
+
+
+                        fullscreenButton.textContent =
+                            "✕";
+
+
+                    }
+
+                    /* Exit fullscreen */
+
+                    else {
+
+
+                        await document.exitFullscreen();
+
+
+                        fullscreenButton.textContent =
+                            "⛶";
+
+                    }
+
+
+                }
+
+                catch (error) {
+
+                    console.error(
+                        "Fullscreen error:",
+                        error
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        /* =====================================
+           FULLSCREEN STATE CHANGE
+        ===================================== */
+
+        document.addEventListener(
+            "fullscreenchange",
+            function () {
+
+
+                if (document.fullscreenElement) {
+
+
+                    fullscreenButton.textContent =
+                        "✕";
+
+
+                }
+
+                else {
+
+
+                    fullscreenButton.textContent =
+                        "⛶";
+
+                }
+
+            }
+        );
+
+
+    </script>
+
+
+</body>
+
+</html>
